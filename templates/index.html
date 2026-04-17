@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>N-Gram Next-Word Predictor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 28px;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #718096;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            color: #2d3748;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        #textInput {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        #textInput:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        #predictBtn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        #predictBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        #predictBtn:active {
+            transform: translateY(0);
+        }
+
+        #clearBtn {
+            background: #e2e8f0;
+            color: #2d3748;
+        }
+
+        #clearBtn:hover {
+            background: #cbd5e0;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .results {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid #e2e8f0;
+        }
+
+        .results.hidden {
+            display: none;
+        }
+
+        .input-text {
+            color: #718096;
+            font-size: 14px;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .input-text code {
+            background: #f7fafc;
+            padding: 4px 8px;
+            border-radius: 4px;
+            color: #667eea;
+            font-family: 'Courier New', monospace;
+        }
+
+        h2 {
+            color: #2d3748;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .predictions-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .prediction-tag {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 500;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .prediction-tag:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        .prediction-tag:active {
+            transform: translateY(0);
+        }
+
+        .error {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #a0aec0;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔮 N-Gram Predictor</h1>
+        <p class="subtitle">Predict the next word using statistical language models</p>
+
+        <div class="input-group">
+            <label for="textInput">Enter text:</label>
+            <input 
+                type="text" 
+                id="textInput" 
+                placeholder="Type something... e.g., 'holmes looked at'"
+                autocomplete="off"
+            />
+        </div>
+
+        <div class="button-group">
+            <button id="clearBtn">Clear</button>
+        </div>
+
+        <div class="loading" id="loading">
+            Thinking...
+        </div>
+
+        <div class="results hidden" id="results">
+            <div class="input-text">
+                You typed: <code id="displayText"></code>
+            </div>
+            <h2>Top Predictions:</h2>
+            <div class="predictions-list" id="predictionsList"></div>
+        </div>
+
+        <div class="error hidden" id="error"></div>
+
+        <div class="footer">
+            Trained on Sherlock Holmes novels from Project Gutenberg
+        </div>
+    </div>
+
+    <script>
+        const textInput = document.getElementById('textInput');
+        const clearBtn = document.getElementById('clearBtn');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+        const error = document.getElementById('error');
+        const predictionsList = document.getElementById('predictionsList');
+        const displayText = document.getElementById('displayText');
+
+        let debounceTimer;
+        const DEBOUNCE_MS = 500; // Longer delay to reduce vibration
+        let isResultsVisible = false;
+
+        function hideError() {
+            error.classList.add('hidden');
+            error.textContent = '';
+        }
+
+        function showError(message) {
+            error.classList.remove('hidden');
+            error.textContent = message;
+        }
+
+        function updateResults(text, predictions) {
+            displayText.textContent = text;
+            
+            // Only update the predictions list HTML
+            const newHTML = predictions
+                .map(word => `<div class="prediction-tag" onclick="selectWord('${word}')">${word}</div>`)
+                .join('');
+            
+            if (predictionsList.innerHTML !== newHTML) {
+                predictionsList.innerHTML = newHTML;
+            }
+            
+            // Only show results if not already visible
+            if (!isResultsVisible) {
+                results.classList.remove('hidden');
+                isResultsVisible = true;
+            }
+            
+            hideError();
+        }
+
+        async function predict() {
+            const text = textInput.value.trim();
+            
+            if (!text) {
+                if (isResultsVisible) {
+                    results.classList.add('hidden');
+                    isResultsVisible = false;
+                }
+                hideError();
+                return;
+            }
+
+            loading.classList.add('active');
+            hideError();
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ text }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    showError(data.error || 'Prediction failed');
+                } else {
+                    updateResults(data.text, data.predictions);
+                }
+            } catch (err) {
+                showError('Error: ' + err.message);
+            } finally {
+                loading.classList.remove('active');
+            }
+        }
+
+        function debouncedPredict() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(predict, DEBOUNCE_MS);
+        }
+
+        function selectWord(word) {
+            const currentText = textInput.value.trim();
+            if (currentText) {
+                textInput.value = currentText + ' ' + word;
+            } else {
+                textInput.value = word;
+            }
+            textInput.focus();
+            // Trigger prediction immediately after selecting
+            clearTimeout(debounceTimer);
+            predict();
+        }
+
+        function clear() {
+            textInput.value = '';
+            results.classList.add('hidden');
+            isResultsVisible = false;
+            hideError();
+            textInput.focus();
+        }
+
+        textInput.addEventListener('input', debouncedPredict);
+        clearBtn.addEventListener('click', clear);
+
+        textInput.focus();
+    </script>
+</body>
+</html>
