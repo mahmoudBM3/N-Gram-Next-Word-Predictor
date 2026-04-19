@@ -20,7 +20,7 @@ def get_env(name: str) -> str:
 
 
 # Load config
-load_dotenv(os.path.join("config", ".env"))
+load_dotenv(os.path.join("config", ".env"), override=True)
 
 # Initialize Flask app
 app = Flask(__name__)

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from collections import Counter, defaultdict
 from typing import Dict, List, Tuple
 
@@ -145,6 +146,10 @@ class NGramModel:
         Returns:
             None.
         """
+        model_dir = os.path.dirname(model_path)
+        if model_dir:
+            os.makedirs(model_dir, exist_ok=True)
+
         with open(model_path, "w", encoding="utf-8") as handle:
             json.dump(self.model, handle, ensure_ascii=True, indent=2)
 
@@ -157,6 +162,10 @@ class NGramModel:
         Returns:
             None.
         """
+        vocab_dir = os.path.dirname(vocab_path)
+        if vocab_dir:
+            os.makedirs(vocab_dir, exist_ok=True)
+
         with open(vocab_path, "w", encoding="utf-8") as handle:
             json.dump(sorted(self.vocab), handle, ensure_ascii=True, indent=2)
 

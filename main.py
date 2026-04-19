@@ -44,6 +44,20 @@ def setup_logging(level_name: str) -> None:
     logging.basicConfig(level=level, format="%(levelname)s: %(message)s")
 
 
+def ensure_parent_dir(path: str) -> None:
+    """Create the parent directory for a file path when it is missing.
+
+    Args:
+        path: File path whose parent directory should exist.
+
+    Returns:
+        None.
+    """
+    parent = os.path.dirname(path)
+    if parent:
+        os.makedirs(parent, exist_ok=True)
+
+
 def run_dataprep(normalizer: Normalizer, train_raw_dir: str, train_tokens: str, dev_limit: int) -> None:
     """Run data preprocessing for training corpus.
 
@@ -119,9 +133,8 @@ def run_model(
     logging.info("Model: building counts and probabilities")
     model.build_counts_and_probabilities(train_tokens)
 
-    model_dir = os.path.dirname(model_path)
-    if model_dir:
-        os.makedirs(model_dir, exist_ok=True)
+    ensure_parent_dir(model_path)
+    ensure_parent_dir(vocab_path)
 
     model.save_model(model_path)
     model.save_vocab(vocab_path)
@@ -211,7 +224,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     """Load config, wire dependencies, and execute requested pipeline step."""
-    load_dotenv(os.path.join("config", ".env"))
+    load_dotenv(os.path.join("config", ".env"), override=True)
 
     setup_logging(os.getenv("LOG_LEVEL", "INFO"))
 
@@ -234,6 +247,12 @@ def main() -> None:
     except ValueError as exc:
         print(f"ERROR: Invalid config value: {exc}")
         raise SystemExit(1) from exc
+
+    # Ensure all configured output locations have parent directories.
+    ensure_parent_dir(train_tokens)
+    ensure_parent_dir(model_path)
+    ensure_parent_dir(vocab_path)
+    ensure_parent_dir(eval_tokens)
 
     normalizer = Normalizer()
     model = NGramModel(ngram_order=ngram_order, unk_threshold=unk_threshold)

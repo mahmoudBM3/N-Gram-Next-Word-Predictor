@@ -148,7 +148,9 @@ class Normalizer:
         Returns:
             None.
         """
-        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        output_dir = os.path.dirname(filepath)
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
         with open(filepath, "w", encoding="utf-8") as handle:
             for line in sentences:
                 handle.write(f"{line}\n")
